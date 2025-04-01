@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Vehicle Service Estimator</title>
+    <style>
+        /* --- Global Styles & Variables --- */
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --primary-color: #007bff; /* A vibrant blue */
+            --primary-light: #e6f2ff;
+            --secondary-color: #6c757d;
+            --text-color: #343a40;
+            --border-color: #dee2e6;
+            --shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
+            --border-radius: 8px;
+            --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: 16px; }
+        body {
+            font-family: var(--font-family);
+            line-height: 1.6;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* --- Main Layout --- */
+        .estimator-container {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            width: 100%;
+            max-width: 1100px;
+        }
+        .config-panel { padding: 30px; width: 100%; }
+        .visualization-panel {
+            padding: 30px;
+            background-color: #e9ecef;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 400px;
+            position: relative;
+        }
+
+        /* --- Typography --- */
+        h1 { text-align: center; color: var(--primary-color); margin-bottom: 30px; font-size: 1.8rem; font-weight: 600; }
+        h2 { color: var(--secondary-color); margin-top: 25px; margin-bottom: 15px; font-size: 1.3rem; font-weight: 500; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        h3 { margin-bottom: 15px; font-size: 1rem; color: var(--text-color); font-weight: 600; }
+
+        /* --- Form Elements --- */
+        .form-group { margin-bottom: 25px; }
+        label.group-label { display: block; font-weight: 600; margin-bottom: 10px; color: var(--text-color); font-size: 1.1rem; }
+        select#vehicleType {
+            width: 100%; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 1rem; background-color: #fff; cursor: pointer; transition: border-color 0.2s ease; appearance: none;
+            background: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007bff%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E") no-repeat right 15px center; background-size: 12px;
+        }
+        select#vehicleType:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); }
+        .service-section h2 { margin-top: 35px; }
+
+        /* Custom Radio Card Styles */
+        .radio-card-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+        .radio-card label { display: block; background-color: #fff; border: 2px solid var(--border-color); border-radius: var(--border-radius); padding: 15px; text-align: center; cursor: pointer; transition: all 0.2s ease-in-out; position: relative; font-size: 0.9rem; }
+        .radio-card input[type="radio"] { opacity: 0; position: absolute; width: 0; height: 0; }
+        .radio-card span.option-title { display: block; font-weight: 600; margin-bottom: 5px; color: var(--text-color); }
+        .radio-card span.option-description { display: block; font-size: 0.8em; color: var(--secondary-color); line-height: 1.3; min-height: 3.9em; }
+        .radio-card label:hover { border-color: var(--primary-color); box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15); }
+        .radio-card input[type="radio"]:checked + label { border-color: var(--primary-color); background-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); }
+        .radio-card input[type="radio"]:focus + label { box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.4); }
+
+        /* --- Visualization Panel --- */
+        #vehicleCanvas { width: 100% !important; max-width: 400px; height: 300px !important; display: block; margin-bottom: 20px; border-radius: var(--border-radius); }
+        #three-container { width: 100%; height: 300px; position: relative; } /* Container for canvas */
+
+        /* --- Price Display --- */
+        .price-display { margin-top: auto; width: 100%; padding: 25px; background-color: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius); text-align: center; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); }
+        .price-display h3 { margin-top: 0; margin-bottom: 10px; color: var(--secondary-color); font-weight: 500; }
+        #totalPrice { font-size: 2.5em; font-weight: 700; color: var(--primary-color); line-height: 1.2; transition: transform 0.2s ease-out; }
+        #totalPrice.updated { transform: scale(1.05); }
+
+        /* --- Responsiveness --- */
+        @media (min-width: 992px) {
+            .estimator-container { flex-direction: row; }
+            .config-panel { width: 60%; border-right: 1px solid var(--border-color); }
+            .visualization-panel { width: 40%; }
+            .radio-card-group { grid-template-columns: repeat(2, 1fr); }
+            .radio-card label { padding: 12px; font-size: 0.85rem; }
+            .radio-card span.option-description { min-height: 4.5em; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="estimator-container">
+
+        <!-- Configuration Panel (Left/Top) -->
+        <div class="config-panel">
+            <h1>Vehicle Service Estimator</h1>
+            <!-- Vehicle Type Selection -->
+            <div class="form-group">
+                <label for="vehicleType" class="group-label">1. Select Vehicle Type:</label>
+                <select id="vehicleType">
+                    <option value="sedan">Sedan / Coupe</option>
+                    <option value="suv">SUV / Crossover</option>
+                    <option value="truck">Truck / Van</option>
+                </select>
+            </div>
+            <!-- Service Options Form -->
+            <form id="serviceOptionsForm">
+                <!-- PPF Section -->
+                <div class="service-section">
+                    <h2>Paint Protection Film (Full Front)</h2>
+                    <div class="radio-card-group" data-service="ppf">
+                         <div class="radio-card"> <input type="radio" id="ppf_none" name="ppf_quality" value="none" checked> <label for="ppf_none"> <span class="option-title">None</span> <span class="option-description">-</span> </label> </div>
+                         <div class="radio-card"> <input type="radio" id="ppf_good" name="ppf_quality" value="good"> <label for="ppf_good"> <span class="option-title">Good</span> <span class="option-description">Standard protection, ~5-7yr lifespan</span> </label> </div>
+                         <div class="radio-card"> <input type="radio" id="ppf_better" name="ppf_quality" value="better"> <label for="ppf_better"> <span class="option-title">Better</span> <span class="option-description">Enhanced clarity & self-healing, ~7-10yr</span> </label> </div>
+                         <div class="radio-card"> <input type="radio" id="ppf_best" name="ppf_quality" value="best"> <label for="ppf_best"> <span class="option-title">Best</span> <span class="option-description">Top-tier hydrophobic, longest warranty ~10+yr</span> </label> </div>
+                    </div>
+                </div>
+                <!-- Window Tint Section -->
+                <div class="service-section">
+                     <h2>Window Tint (Sides & Rear)</h2>
+                     <div class="radio-card-group" data-service="tint">
+                         <div class="radio-card"> <input type="radio" id="tint_none" name="tint_quality" value="none" checked> <label for="tint_none"> <span class="option-title">None</span> <span class="option-description">-</span> </label> </div>
+                         <div class="radio-card"> <input type="radio" id="tint_good" name="tint_quality" value="good"> <label for="tint_good"> <span class="option-title">Good</span> <span class="option-description">Dyed film, basic UV/heat rejection</span> </label> </div>
+                         <div class="radio-card"> <input type="radio" id="tint_better" name="tint_quality" value="better"> <label for="tint_better"> <span class="option-title">Better</span> <span class="option-description">Carbon/basic ceramic, better heat block</span> </label> </div>
+                         <div class="radio-card"> <input type="radio" id="tint_best" name="tint_quality" value="best"> <label for="tint_best"> <span class="option-title">Best</span> <span class="option-description">High-performance ceramic/IR, max heat block</span> </label> </div>
+                     </div>
+                </div>
+                 <!-- Ceramic Coating Section -->
+                 <div class="service-section">
+                    <h2>Ceramic Coating (Full Exterior)</h2>
+                     <div class="radio-card-group" data-service="ceramic">
+                        <div class="radio-card"> <input type="radio" id="ceramic_none" name="ceramic_quality" value="none" checked> <label for="ceramic_none"> <span class="option-title">None</span> <span class="option-description">-</span> </label> </div>
+                        <div class="radio-card"> <input type="radio" id="ceramic_good" name="ceramic_quality" value="good"> <label for="ceramic_good"> <span class="option-title">Good</span> <span class="option-description">Entry-level, ~1-2yr durability</span> </label> </div>
+                        <div class="radio-card"> <input type="radio" id="ceramic_better" name="ceramic_quality" value="better"> <label for="ceramic_better"> <span class="option-title">Better</span> <span class="option-description">Pro grade, ~3-5yr durability</span> </label> </div>
+                        <div class="radio-card"> <input type="radio" id="ceramic_best" name="ceramic_quality" value="best"> <label for="ceramic_best"> <span class="option-title">Best</span> <span class="option-description">Premium multi-layer, ~5+yr durability</span> </label> </div>
+                    </div>
+                 </div>
+            </form>
+        </div>
+
+        <!-- Visualization Panel (Right/Bottom) -->
+        <div class="visualization-panel">
+            <!-- Three.js Canvas Container -->
+            <div id="three-container">
+                 <canvas id="vehicleCanvas"></canvas>
+            </div>
+            <!-- Total Price Display -->
+            <div class="price-display">
+                <h3>Estimated Total Price:</h3>
+                <div id="totalPrice">$0.00</div>
+            </div>
+        </div>
+
+    </div> <!-- /estimator-container -->
+
+    <!-- *** MODIFICATION START *** -->
+    <!-- Load the UMD build of Three.js (creates global THREE object) -->
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+
+    <!-- Your script, now as a CLASSIC script (no type="module") -->
+    <script>
+        // --- Pricing Data ---
+        const basePrices = {
+            ppf: { none: 0, good: 1200, better: 1800, best: 2500 },
+            tint: { none: 0, good: 300, better: 500, best: 700 },
+            ceramic: { none: 0, good: 800, better: 1200, best: 1800 }
+        };
+
+        const sizeMultipliers = {
+            sedan: 1.0,
+            suv: 1.2,
+            truck: 1.4
+        };
+
+        // --- DOM Elements ---
+        const vehicleTypeSelect = document.getElementById('vehicleType');
+        const serviceForm = document.getElementById('serviceOptionsForm');
+        const totalPriceDisplay = document.getElementById('totalPrice');
+        const radioButtons = serviceForm.querySelectorAll('input[type="radio"]');
+        const canvasContainer = document.getElementById('three-container');
+        const canvas = document.getElementById('vehicleCanvas');
+
+
+        // --- Price Calculation Logic ---
+        function calculateTotal() {
+            console.log("calculateTotal triggered"); // Keep logs for debugging
+            let total = 0;
+            const selectedVehicleType = vehicleTypeSelect.value;
+            const multiplier = sizeMultipliers[selectedVehicleType] || 1.0;
+
+            for (const service in basePrices) {
+                const checkedRadio = serviceForm.querySelector(`input[name="${service}_quality"]:checked`);
+                if (checkedRadio) {
+                    const quality = checkedRadio.value;
+                    const basePrice = basePrices[service][quality] || 0;
+                    total += basePrice * multiplier;
+                }
+            }
+
+            totalPriceDisplay.textContent = `$${total.toFixed(2)}`;
+            console.log("Price updated to:", totalPriceDisplay.textContent); // Keep logs
+
+             totalPriceDisplay.classList.add('updated');
+             setTimeout(() => {
+                 totalPriceDisplay.classList.remove('updated');
+             }, 200);
+        }
+
+        // --- Three.js Setup (using global THREE) ---
+        let scene, camera, renderer, carMesh;
+
+        function initThree() {
+            console.log("Attempting initThree...");
+            // Ensure THREE is loaded
+            if (typeof THREE === 'undefined') {
+                 console.error("THREE global object not found. Three.js might not have loaded correctly.");
+                 throw new Error("Three.js library not loaded.");
+            }
+
+            // Scene
+            scene = new THREE.Scene(); // Use global THREE
+            scene.background = new THREE.Color(0xe9ecef);
+
+            // Camera
+            const aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+            camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 100); // Use global THREE
+            camera.position.set(0, 1.5, 5);
+            camera.lookAt(0, 0.5, 0);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); // Use global THREE
+            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // Use global THREE
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); // Use global THREE
+            directionalLight.position.set(5, 10, 7);
+            scene.add(directionalLight);
+
+            createSimpleCar(); // Call function that uses global THREE
+             console.log("Three.js scene appears setup.");
+
+             window.addEventListener('resize', onWindowResize, false);
+             animate(); // Start animation
+        }
+
+        function createSimpleCar() {
+             // Uses global THREE implicitly for THREE.Group, THREE.MeshStandardMaterial, etc.
+            const carGroup = new THREE.Group();
+            const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x007bff, roughness: 0.5, metalness: 0.3 });
+            const bodyGeometry = new THREE.BoxGeometry(3, 0.8, 1.5);
+            const carBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            carBody.position.y = 0.6;
+            carGroup.add(carBody);
+
+            const cabinMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.7 });
+            const cabinGeometry = new THREE.BoxGeometry(1.5, 0.7, 1.3);
+            const cabin = new THREE.Mesh(cabinGeometry, cabinMaterial);
+            cabin.position.set(0.2, 1.3, 0);
+            carGroup.add(cabin);
+
+            const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
+            const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 32);
+            wheelGeometry.rotateX(Math.PI / 2);
+            const wheelPositions = [
+                 { x: 1.0, y: 0.4, z: 0.75 }, { x: 1.0, y: 0.4, z: -0.75 },
+                 { x: -1.0, y: 0.4, z: 0.75 }, { x: -1.0, y: 0.4, z: -0.75 }
+            ];
+            wheelPositions.forEach(pos => {
+                 const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                 wheel.position.set(pos.x, pos.y, pos.z);
+                 carGroup.add(wheel);
+            });
+
+            carMesh = carGroup;
+            scene.add(carMesh);
+             console.log("Car mesh created and added to scene.");
+        }
+
+        function onWindowResize() {
+             if (!camera || !renderer || !canvasContainer) return;
+             const newWidth = canvasContainer.clientWidth;
+             const newHeight = canvasContainer.clientHeight;
+             camera.aspect = newWidth / newHeight;
+             camera.updateProjectionMatrix();
+             renderer.setSize(newWidth, newHeight);
+             console.log("Resized canvas.");
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (carMesh) { carMesh.rotation.y += 0.005; }
+            if (renderer && scene && camera) { // Add check
+                 renderer.render(scene, camera);
+             } else {
+                 console.log("Skipping render - renderer/scene/camera not ready?"); // Debug log
+             }
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM fully loaded and parsed (Classic Script)");
+
+            try {
+                 calculateTotal(); // Initial calculation
+                 console.log("Initial price calculated.");
+            } catch(e) {
+                console.error("Error during initial calculation:", e);
+            }
+
+            try {
+                console.log("Attempting to attach listeners...");
+                if (!vehicleTypeSelect) throw new Error("vehicleTypeSelect not found");
+                if (!radioButtons || radioButtons.length === 0) throw new Error("radioButtons not found");
+
+                vehicleTypeSelect.addEventListener('change', calculateTotal);
+                radioButtons.forEach(radio => {
+                    radio.addEventListener('change', calculateTotal);
+                });
+                console.log("Event listeners attached successfully.");
+            } catch (e) {
+                 console.error("Error attaching event listeners:", e);
+            }
+
+            try {
+                console.log("Attempting to initialize Three.js...");
+                initThree(); // Initialize the 3D scene
+                console.log("Three.js initialization process finished.");
+            } catch (error) {
+                console.error("Failed to initialize Three.js:", error);
+                const vizPanel = document.querySelector('.visualization-panel');
+                 const errorMsgElement = document.createElement('p');
+                 errorMsgElement.style.color = 'red';
+                 errorMsgElement.style.textAlign = 'center';
+                 errorMsgElement.style.padding = '20px';
+                 errorMsgElement.textContent = 'Could not load 3D visualization.';
+
+                if (vizPanel) {
+                     // Prepend error message instead of replacing all content
+                     vizPanel.insertBefore(errorMsgElement, vizPanel.firstChild);
+                 }
+                 const canvasElement = document.getElementById('three-container');
+                 if (canvasElement) { canvasElement.style.display = 'none'; }
+            }
+        });
+
+         console.log("Classic script processed."); // Log end of script processing
+    </script>
+    <!-- *** MODIFICATION END *** -->
+
+</body>
+</html>
